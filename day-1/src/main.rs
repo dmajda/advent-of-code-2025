@@ -2,54 +2,80 @@ use std::error::Error;
 use std::fmt;
 use std::{io, process};
 
-// In principle, the dial position and rotation distances should be unsigned.
-// However, the rotation logic is best expressed using signed arithmetics. To
-// avoid many type casts, I just use `i32` everywhere instead of more correct
-// `u32`.
-
-const N: i32 = 100;
+const N: u32 = 100;
 
 pub struct Dial {
-    pos: i32,
-    zero_count: u32,
+    pos: u32,
+    zero_count_1: u32,
+    zero_count_2: u32,
 }
 
 impl Dial {
     pub fn new() -> Dial {
         Dial {
             pos: 50,
-            zero_count: 0,
+            zero_count_1: 0,
+            zero_count_2: 0,
         }
     }
 
-    pub fn pos(&self) -> i32 {
+    pub fn pos(&self) -> u32 {
         self.pos
     }
 
-    pub fn zero_count(&self) -> u32 {
-        self.zero_count
+    pub fn zero_count_1(&self) -> u32 {
+        self.zero_count_1
     }
 
-    pub fn rotate_left(&mut self, n: i32) {
-        self.pos = (self.pos - n).rem_euclid(N);
-
-        if self.pos == 0 {
-            self.zero_count += 1
-        }
+    pub fn zero_count_2(&self) -> u32 {
+        self.zero_count_2
     }
 
-    pub fn rotate_right(&mut self, n: i32) {
-        self.pos = (self.pos + n).rem_euclid(N);
+    pub fn rotate_left(&mut self, n: u32) {
+        // The trick I use here is to convert a left rotation to a right one
+        // using a symmetry along the vertical axis of the dial, which can be
+        // expressed as:
+        //
+        //     pos <=> (N - pos) % N
+        //
+        // This approach simplifies the counting of zero crossings.
+        //
+        // There may be a simple way to count zero crossings for left rotations
+        // even without using the symmetry, but I don't see it at the moment.
 
-        if self.pos == 0 {
-            self.zero_count += 1
-        }
+        let (pos, zero_count_1, zero_count_2) = Dial::rotate(Dial::symmetrical_pos(self.pos), n);
+
+        self.pos = Dial::symmetrical_pos(pos);
+        self.zero_count_1 += zero_count_1;
+        self.zero_count_2 += zero_count_2;
+    }
+
+    pub fn rotate_right(&mut self, n: u32) {
+        let (pos, zero_count_1, zero_count_2) = Dial::rotate(self.pos, n);
+
+        self.pos = pos;
+        self.zero_count_1 += zero_count_1;
+        self.zero_count_2 += zero_count_2;
+    }
+
+    fn symmetrical_pos(pos: u32) -> u32 {
+        (N - pos) % N
+    }
+
+    fn rotate(pos: u32, n: u32) -> (u32, u32, u32) {
+        let p = pos + n;
+
+        let pos = p % N;
+        let zero_count_1 = if pos == 0 { 1 } else { 0 };
+        let zero_count_2 = p / N;
+
+        (pos, zero_count_1, zero_count_2)
     }
 }
 
 enum Rotation {
-    Left(i32),
-    Right(i32),
+    Left(u32),
+    Right(u32),
 }
 
 #[derive(Debug)]
@@ -88,7 +114,7 @@ fn parse_line(line: &str) -> Result<Rotation, ParseLineError> {
     match direction {
         'L' => {
             let distance = distance
-                .parse::<i32>()
+                .parse::<u32>()
                 .map_err(|_| ParseLineError::InvalidDistance(distance.to_owned()))?;
 
             Ok(Rotation::Left(distance))
@@ -96,7 +122,7 @@ fn parse_line(line: &str) -> Result<Rotation, ParseLineError> {
 
         'R' => {
             let distance = distance
-                .parse::<i32>()
+                .parse::<u32>()
                 .map_err(|_| ParseLineError::InvalidDistance(distance.to_owned()))?;
 
             Ok(Rotation::Right(distance))
@@ -126,7 +152,8 @@ fn main() {
         }
     }
 
-    println!("{}", dial.zero_count());
+    println!("{}", dial.zero_count_1());
+    println!("{}", dial.zero_count_2());
 }
 
 #[cfg(test)]
@@ -137,46 +164,57 @@ mod tests {
     fn dial_works() {
         let mut dial = Dial::new();
         assert_eq!(dial.pos(), 50);
-        assert_eq!(dial.zero_count(), 0);
+        assert_eq!(dial.zero_count_1(), 0);
+        assert_eq!(dial.zero_count_2(), 0);
 
         dial.rotate_left(68);
         assert_eq!(dial.pos(), 82);
-        assert_eq!(dial.zero_count(), 0);
+        assert_eq!(dial.zero_count_1(), 0);
+        assert_eq!(dial.zero_count_2(), 1);
 
         dial.rotate_left(30);
         assert_eq!(dial.pos(), 52);
-        assert_eq!(dial.zero_count(), 0);
+        assert_eq!(dial.zero_count_1(), 0);
+        assert_eq!(dial.zero_count_2(), 1);
 
         dial.rotate_right(48);
         assert_eq!(dial.pos(), 0);
-        assert_eq!(dial.zero_count(), 1);
+        assert_eq!(dial.zero_count_1(), 1);
+        assert_eq!(dial.zero_count_2(), 2);
 
         dial.rotate_left(5);
         assert_eq!(dial.pos(), 95);
-        assert_eq!(dial.zero_count(), 1);
+        assert_eq!(dial.zero_count_1(), 1);
+        assert_eq!(dial.zero_count_2(), 2);
 
         dial.rotate_right(60);
         assert_eq!(dial.pos(), 55);
-        assert_eq!(dial.zero_count(), 1);
+        assert_eq!(dial.zero_count_1(), 1);
+        assert_eq!(dial.zero_count_2(), 3);
 
         dial.rotate_left(55);
         assert_eq!(dial.pos(), 0);
-        assert_eq!(dial.zero_count(), 2);
+        assert_eq!(dial.zero_count_1(), 2);
+        assert_eq!(dial.zero_count_2(), 4);
 
         dial.rotate_left(1);
         assert_eq!(dial.pos(), 99);
-        assert_eq!(dial.zero_count(), 2);
+        assert_eq!(dial.zero_count_1(), 2);
+        assert_eq!(dial.zero_count_2(), 4);
 
         dial.rotate_left(99);
         assert_eq!(dial.pos(), 0);
-        assert_eq!(dial.zero_count(), 3);
+        assert_eq!(dial.zero_count_1(), 3);
+        assert_eq!(dial.zero_count_2(), 5);
 
         dial.rotate_right(14);
         assert_eq!(dial.pos(), 14);
-        assert_eq!(dial.zero_count(), 3);
+        assert_eq!(dial.zero_count_1(), 3);
+        assert_eq!(dial.zero_count_2(), 5);
 
         dial.rotate_left(82);
         assert_eq!(dial.pos(), 32);
-        assert_eq!(dial.zero_count(), 3);
+        assert_eq!(dial.zero_count_1(), 3);
+        assert_eq!(dial.zero_count_2(), 6);
     }
 }
