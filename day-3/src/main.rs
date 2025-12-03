@@ -21,7 +21,7 @@ fn find_max_battery(bank: &[u8], start: usize, end: usize) -> (usize, u64) {
         .enumerate()
         .rev()
         .max_by_key(|&(_, b)| b)
-        .map(|(i, b)| (i, (b - b'0') as u64))
+        .map(|(i, b)| (start + i, (b - b'0') as u64))
         .unwrap()
 }
 
