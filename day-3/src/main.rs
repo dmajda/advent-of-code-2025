@@ -2,7 +2,7 @@ use std::io;
 
 use anyhow::Result;
 
-fn find_max_joltage(bank: &[u8]) -> u32 {
+fn find_max_joltage(bank: &[u8]) -> u64 {
     debug_assert!(bank.len() >= 2);
     debug_assert!(bank.iter().all(|&b| b >= b'0' && b <= b'9'));
 
@@ -12,7 +12,7 @@ fn find_max_joltage(bank: &[u8]) -> u32 {
     10 * joltage1 + joltage2
 }
 
-fn find_max_battery(bank: &[u8], start: usize, end: usize) -> (usize, u32) {
+fn find_max_battery(bank: &[u8], start: usize, end: usize) -> (usize, u64) {
     // The `rev` call is needed because `max_by_key` finds the *last* maximum
     // value and we want the *first* one.
 
@@ -21,7 +21,7 @@ fn find_max_battery(bank: &[u8], start: usize, end: usize) -> (usize, u32) {
         .enumerate()
         .rev()
         .max_by_key(|&(_, b)| b)
-        .map(|(i, b)| (i, (b - b'0') as u32))
+        .map(|(i, b)| (i, (b - b'0') as u64))
         .unwrap()
 }
 
