@@ -35,13 +35,19 @@ fn find_max_battery(bank: &[u8], start: usize, end: usize) -> (usize, u64) {
 }
 
 fn main() -> Result<()> {
-    let mut joltage = 0;
+    let mut joltage_2 = 0;
+    let mut joltage_12 = 0;
 
     for line in io::stdin().lines() {
-        joltage += find_max_joltage(line?.as_bytes(), 2);
+        let line = line?;
+        let bank = line.as_bytes();
+
+        joltage_2 += find_max_joltage(bank, 2);
+        joltage_12 += find_max_joltage(bank, 12);
     }
 
-    println!("{}", joltage);
+    println!("{}", joltage_2);
+    println!("{}", joltage_12);
     Ok(())
 }
 
@@ -55,5 +61,10 @@ mod tests {
         assert_eq!(find_max_joltage(b"811111111111119", 2), 89);
         assert_eq!(find_max_joltage(b"234234234234278", 2), 78);
         assert_eq!(find_max_joltage(b"818181911112111", 2), 92);
+
+        assert_eq!(find_max_joltage(b"987654321111111", 12), 987654321111);
+        assert_eq!(find_max_joltage(b"811111111111119", 12), 811111111119);
+        assert_eq!(find_max_joltage(b"234234234234278", 12), 434234234278);
+        assert_eq!(find_max_joltage(b"818181911112111", 12), 888911112111);
     }
 }
