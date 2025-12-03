@@ -2,14 +2,23 @@ use std::io;
 
 use anyhow::Result;
 
-fn find_max_joltage(bank: &[u8]) -> u64 {
-    debug_assert!(bank.len() >= 2);
+fn find_max_joltage(bank: &[u8], n: usize) -> u64 {
+    debug_assert!(bank.len() >= n);
     debug_assert!(bank.iter().all(|&b| b >= b'0' && b <= b'9'));
 
-    let (index1, joltage1) = find_max_battery(bank, 0, bank.len() - 1);
-    let (_, joltage2) = find_max_battery(bank, index1 + 1, bank.len());
+    let mut max_joltage = 0;
+    let mut start = 0;
+    let mut end = bank.len() - n + 1;
 
-    10 * joltage1 + joltage2
+    for _ in 0..n {
+        let (index, joltage) = find_max_battery(bank, start, end);
+
+        max_joltage = 10 * max_joltage + joltage;
+        start = index + 1;
+        end += 1;
+    }
+
+    max_joltage
 }
 
 fn find_max_battery(bank: &[u8], start: usize, end: usize) -> (usize, u64) {
@@ -29,7 +38,7 @@ fn main() -> Result<()> {
     let mut joltage = 0;
 
     for line in io::stdin().lines() {
-        joltage += find_max_joltage(line?.as_bytes());
+        joltage += find_max_joltage(line?.as_bytes(), 2);
     }
 
     println!("{}", joltage);
@@ -42,9 +51,9 @@ mod tests {
 
     #[test]
     fn find_max_joltage_works() {
-        assert_eq!(find_max_joltage(b"987654321111111"), 98);
-        assert_eq!(find_max_joltage(b"811111111111119"), 89);
-        assert_eq!(find_max_joltage(b"234234234234278"), 78);
-        assert_eq!(find_max_joltage(b"818181911112111"), 92);
+        assert_eq!(find_max_joltage(b"987654321111111", 2), 98);
+        assert_eq!(find_max_joltage(b"811111111111119", 2), 89);
+        assert_eq!(find_max_joltage(b"234234234234278", 2), 78);
+        assert_eq!(find_max_joltage(b"818181911112111", 2), 92);
     }
 }
