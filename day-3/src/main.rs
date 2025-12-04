@@ -1,11 +1,8 @@
 use std::io;
 
-use anyhow::Result;
+use anyhow::{Result, ensure};
 
 fn find_max_joltage(bank: &[u8], n: usize) -> u64 {
-    debug_assert!(bank.len() >= n);
-    debug_assert!(bank.iter().all(|&b| b >= b'0' && b <= b'9'));
-
     let mut max_joltage = 0;
     let mut start = 0;
     let mut end = bank.len() - n + 1;
@@ -41,6 +38,12 @@ fn main() -> Result<()> {
     for line in io::stdin().lines() {
         let line = line?;
         let bank = line.as_bytes();
+
+        ensure!(bank.len() >= 12, "insufficient bank length: {}", bank.len());
+        ensure!(
+            bank.iter().all(|&b| b >= b'0' && b <= b'9'),
+            "invalid bank: {line:?}"
+        );
 
         joltage_2 += find_max_joltage(bank, 2);
         joltage_12 += find_max_joltage(bank, 12);
