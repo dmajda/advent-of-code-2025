@@ -1,34 +1,29 @@
-use std::io;
+use std::{io, mem};
 
 use anyhow::{Result, ensure};
 
 fn find_max_joltage(bank: &[u8], n: usize) -> u64 {
-    let mut max_joltage = 0;
-    let mut start = 0;
-    let mut end = bank.len() - n + 1;
+    // First, we select the last `n` batteries. Then we go through the rest of
+    // the batteries right-to-left and try to increase the total joltage by
+    // adjusting the selection.
 
-    for _ in 0..n {
-        let (index, joltage) = find_max_battery(bank, start, end);
+    let mut selected = bank[bank.len() - n..].to_vec();
 
-        max_joltage = 10 * max_joltage + joltage;
-        start = index + 1;
-        end += 1;
+    for i in (0..bank.len() - n).rev() {
+        let mut b = bank[i];
+
+        for j in 0..n {
+            if b >= selected[j] {
+                mem::swap(&mut b, &mut selected[j]);
+            } else {
+                break;
+            }
+        }
     }
 
-    max_joltage
-}
-
-fn find_max_battery(bank: &[u8], start: usize, end: usize) -> (usize, u64) {
-    // The `rev` call is needed because `max_by_key` finds the *last* maximum
-    // value and we want the *first* one.
-
-    bank[start..end]
-        .iter()
-        .enumerate()
-        .rev()
-        .max_by_key(|&(_, b)| b)
-        .map(|(i, b)| (start + i, (b - b'0') as u64))
-        .unwrap()
+    selected
+        .into_iter()
+        .fold(0, |acc, b| 10 * acc + (b - b'0') as u64)
 }
 
 fn main() -> Result<()> {
