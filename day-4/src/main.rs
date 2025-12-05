@@ -119,7 +119,7 @@ fn main() -> Result<()> {
     ensure!(
         lines
             .iter()
-            .all(|line| line.chars().all(|b| b == '.' || b == '@')),
+            .all(|line| line.chars().all(|ch| ch == '.' || ch == '@')),
         "grid cell contains an invalid character"
     );
 
