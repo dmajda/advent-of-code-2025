@@ -33,7 +33,7 @@ fn main() -> Result<()> {
 
     for line in io::stdin().lines() {
         let line = line?;
-        if line == "" {
+        if line.is_empty() {
             break;
         }
 
