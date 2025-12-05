@@ -45,8 +45,28 @@ impl Grid {
         self.update_adjacent_roll_counts(x, y, 1);
     }
 
+    pub fn remove_roll(&mut self, x: usize, y: usize) {
+        assert!(x < self.width);
+        assert!(y < self.height);
+        assert!(self.cell(x, y) == Cell::Roll);
+
+        self.set_cell(x, y, Cell::Empty);
+        self.update_adjacent_roll_counts(x, y, -1);
+    }
+
     pub fn accessible_roll_count(&self) -> usize {
         self.accessible_roll_coords().len()
+    }
+
+    pub fn remove_accessible_rolls(&mut self) -> usize {
+        let coords = self.accessible_roll_coords();
+        let coords_len = coords.len();
+
+        for (x, y) in coords {
+            self.remove_roll(x, y)
+        }
+
+        coords_len
     }
 
     fn cell(&self, x: usize, y: usize) -> Cell {
@@ -126,7 +146,17 @@ fn main() -> Result<()> {
         }
     }
 
-    println!("{}", grid.accessible_roll_count());
+    let count_1 = grid.accessible_roll_count();
+
+    let mut count_2 = 0;
+    while let c = grid.remove_accessible_rolls()
+        && c > 0
+    {
+        count_2 += c;
+    }
+
+    println!("{}", count_1);
+    println!("{}", count_2);
     Ok(())
 }
 
@@ -160,5 +190,16 @@ mod tests {
         }
 
         assert_eq!(grid.accessible_roll_count(), 13);
+
+        assert_eq!(grid.remove_accessible_rolls(), 13);
+        assert_eq!(grid.remove_accessible_rolls(), 12);
+        assert_eq!(grid.remove_accessible_rolls(), 7);
+        assert_eq!(grid.remove_accessible_rolls(), 5);
+        assert_eq!(grid.remove_accessible_rolls(), 2);
+        assert_eq!(grid.remove_accessible_rolls(), 1);
+        assert_eq!(grid.remove_accessible_rolls(), 1);
+        assert_eq!(grid.remove_accessible_rolls(), 1);
+        assert_eq!(grid.remove_accessible_rolls(), 1);
+        assert_eq!(grid.remove_accessible_rolls(), 0);
     }
 }
