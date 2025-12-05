@@ -46,8 +46,8 @@ impl FreshIngredients {
         debug_assert!(first <= last);
 
         // If there is no overlapping, insert the newly added range. Otherwise,
-        // build a new range from newly added range and the ranges it overlaps
-        // with, and replace them with it.
+        // build a new range from the newly added range and the ranges it
+        // overlaps with, and replace them with it.
         if first == last {
             self.ranges.insert(first, range);
         } else {
