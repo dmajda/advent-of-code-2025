@@ -4,6 +4,14 @@ use std::ops::RangeInclusive;
 use anyhow::{Result, anyhow};
 
 struct FreshIngredients {
+    // We maintain these invariants:
+    //
+    //   1. The ranges are non-empty.
+    //   2. The ranges are non-overlapping.
+    //   3. The ranges and sorted by their start/end (the first two invariants
+    //      imply that sorting by either leads to the same ordering).
+    //
+    // We rely on these invariants heavily in the implementation.
     ranges: Vec<RangeInclusive<u64>>,
 }
 
@@ -13,11 +21,65 @@ impl FreshIngredients {
     }
 
     pub fn add_range(&mut self, range: RangeInclusive<u64>) {
-        self.ranges.push(range);
+        assert!(range.start() <= range.end());
+
+        // Index of the first range the newly added range might overlap with, or
+        // |self.ranges.len()| if there isn't any.
+        let first = match self
+            .ranges
+            .binary_search_by_key(range.start(), |range| *range.end())
+        {
+            Ok(index) => index,
+            Err(index) => index,
+        };
+
+        // Index of the range *after* the last range the newly added range might
+        // overlap with, or |0| if there isn't any.
+        let last = match self
+            .ranges
+            .binary_search_by_key(range.end(), |range| *range.start())
+        {
+            Ok(index) => index + 1,
+            Err(index) => index,
+        };
+
+        debug_assert!(first <= last);
+
+        // If there is no overlapping, insert the newly added range. Otherwise,
+        // build a new range from newly added range and the ranges it overlaps
+        // with, and replace them with it.
+        if first == last {
+            self.ranges.insert(first, range);
+        } else {
+            let start = *self.ranges[first].start().min(range.start());
+            let end = *self.ranges[last - 1].end().max(range.end());
+
+            self.ranges.splice(first..last, [start..=end]);
+        }
     }
 
     pub fn is_fresh(&self, id: u64) -> bool {
-        self.ranges.iter().any(|range| range.contains(&id))
+        // Index of the first range the ID might fall into, or
+        // |self.ranges.len()| if there isn't any.
+        let first = match self.ranges.binary_search_by_key(&id, |range| *range.end()) {
+            Ok(index) => index,
+            Err(index) => index,
+        };
+
+        // Index of the range *after* the last range the ID might fall into, or
+        // |0| if there isn't any.
+        let last = match self
+            .ranges
+            .binary_search_by_key(&id, |range| *range.start())
+        {
+            Ok(index) => index + 1,
+            Err(index) => index,
+        };
+
+        debug_assert!(first <= last);
+
+        // See if the the ID falls into one of the ranges.
+        first < last
     }
 }
 
