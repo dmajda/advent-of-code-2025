@@ -3,8 +3,22 @@ use std::ops::RangeInclusive;
 
 use anyhow::{Result, anyhow};
 
-fn is_fresh(fresh_id_ranges: &[RangeInclusive<u64>], id: u64) -> bool {
-    fresh_id_ranges.iter().any(|range| range.contains(&id))
+struct FreshIngredients {
+    ranges: Vec<RangeInclusive<u64>>,
+}
+
+impl FreshIngredients {
+    pub fn new() -> FreshIngredients {
+        FreshIngredients { ranges: vec![] }
+    }
+
+    pub fn add_range(&mut self, range: RangeInclusive<u64>) {
+        self.ranges.push(range);
+    }
+
+    pub fn is_fresh(&self, id: u64) -> bool {
+        self.ranges.iter().any(|range| range.contains(&id))
+    }
 }
 
 fn parse_fresh_id_range(line: String) -> Result<RangeInclusive<u64>> {
@@ -29,7 +43,7 @@ fn parse_available_id(line: String) -> Result<u64> {
 }
 
 fn main() -> Result<()> {
-    let mut fresh_id_ranges = vec![];
+    let mut fresh_ingredients = FreshIngredients::new();
 
     for line in io::stdin().lines() {
         let line = line?;
@@ -37,7 +51,7 @@ fn main() -> Result<()> {
             break;
         }
 
-        fresh_id_ranges.push(parse_fresh_id_range(line)?);
+        fresh_ingredients.add_range(parse_fresh_id_range(line)?);
     }
 
     let mut count = 0;
@@ -45,7 +59,7 @@ fn main() -> Result<()> {
     for line in io::stdin().lines() {
         let line = line?;
 
-        if is_fresh(&fresh_id_ranges, parse_available_id(line)?) {
+        if fresh_ingredients.is_fresh(parse_available_id(line)?) {
             count += 1;
         }
     }
@@ -59,14 +73,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn is_fresh_works() {
-        let fresh_id_ranges = vec![3..=5, 10..=14, 16..=20, 12..=18];
+    fn fresh_ingredients_works() {
+        let mut fresh_ingredients = FreshIngredients::new();
+        fresh_ingredients.add_range(3..=5);
+        fresh_ingredients.add_range(10..=14);
+        fresh_ingredients.add_range(16..=20);
+        fresh_ingredients.add_range(12..=18);
 
-        assert_eq!(is_fresh(&fresh_id_ranges, 1), false);
-        assert_eq!(is_fresh(&fresh_id_ranges, 5), true);
-        assert_eq!(is_fresh(&fresh_id_ranges, 8), false);
-        assert_eq!(is_fresh(&fresh_id_ranges, 11), true);
-        assert_eq!(is_fresh(&fresh_id_ranges, 17), true);
-        assert_eq!(is_fresh(&fresh_id_ranges, 32), false);
+        assert_eq!(fresh_ingredients.is_fresh(1), false);
+        assert_eq!(fresh_ingredients.is_fresh(5), true);
+        assert_eq!(fresh_ingredients.is_fresh(8), false);
+        assert_eq!(fresh_ingredients.is_fresh(11), true);
+        assert_eq!(fresh_ingredients.is_fresh(17), true);
+        assert_eq!(fresh_ingredients.is_fresh(32), false);
     }
 }
