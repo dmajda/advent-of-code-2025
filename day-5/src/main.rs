@@ -3,6 +3,10 @@ use std::ops::RangeInclusive;
 
 use anyhow::{Result, anyhow};
 
+fn is_fresh(fresh_id_ranges: &[RangeInclusive<u64>], id: u64) -> bool {
+    fresh_id_ranges.iter().any(|range| range.contains(&id))
+}
+
 fn parse_fresh_id_range(line: String) -> Result<RangeInclusive<u64>> {
     let (start, end) = line
         .split_once('-')
@@ -22,10 +26,6 @@ fn parse_fresh_id_range(line: String) -> Result<RangeInclusive<u64>> {
 fn parse_available_id(line: String) -> Result<u64> {
     line.parse()
         .map_err(|_| anyhow!("invalid available ingredient ID: {line:?}"))
-}
-
-fn is_fresh(fresh_id_ranges: &[RangeInclusive<u64>], id: u64) -> bool {
-    fresh_id_ranges.iter().any(|range| range.contains(&id))
 }
 
 fn main() -> Result<()> {
