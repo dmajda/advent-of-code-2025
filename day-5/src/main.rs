@@ -81,6 +81,13 @@ impl FreshIngredients {
         // See if the the ID falls into one of the ranges.
         first < last
     }
+
+    pub fn fresh_count(&self) -> u64 {
+        self.ranges
+            .iter()
+            .map(|range| range.end() - range.start() + 1)
+            .sum()
+    }
 }
 
 fn parse_fresh_id_range(line: String) -> Result<RangeInclusive<u64>> {
@@ -116,17 +123,20 @@ fn main() -> Result<()> {
         fresh_ingredients.add_range(parse_fresh_id_range(line)?);
     }
 
-    let mut count = 0;
+    let mut count_1 = 0;
 
     for line in io::stdin().lines() {
         let line = line?;
 
         if fresh_ingredients.is_fresh(parse_available_id(line)?) {
-            count += 1;
+            count_1 += 1;
         }
     }
 
-    println!("{count}");
+    let count_2 = fresh_ingredients.fresh_count();
+
+    println!("{count_1}");
+    println!("{count_2}");
     Ok(())
 }
 
@@ -148,5 +158,7 @@ mod tests {
         assert_eq!(fresh_ingredients.is_fresh(11), true);
         assert_eq!(fresh_ingredients.is_fresh(17), true);
         assert_eq!(fresh_ingredients.is_fresh(32), false);
+
+        assert_eq!(fresh_ingredients.fresh_count(), 14);
     }
 }
