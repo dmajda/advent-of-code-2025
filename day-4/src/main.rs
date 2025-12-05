@@ -46,17 +46,7 @@ impl Grid {
     }
 
     pub fn accessible_roll_count(&self) -> usize {
-        let mut count = 0;
-
-        for y in 0..self.height {
-            for x in 0..self.width {
-                if self.cell(x, y) == Cell::Roll && self.adjacent_roll_count(x, y) < 4 {
-                    count += 1;
-                }
-            }
-        }
-
-        count
+        self.accessible_roll_coords().len()
     }
 
     fn cell(&self, x: usize, y: usize) -> Cell {
@@ -91,6 +81,18 @@ impl Grid {
                 x >= 0 && x < self.width as isize && y >= 0 && y < self.height as isize
             })
             .map(|(x, y)| (x as usize, y as usize))
+            .collect()
+    }
+
+    fn accessible_roll_coords(&self) -> Vec<(usize, usize)> {
+        (0..self.height)
+            .flat_map(move |y| {
+                (0..self.width)
+                    .filter(move |&x| {
+                        self.cell(x, y) == Cell::Roll && self.adjacent_roll_count(x, y) < 4
+                    })
+                    .map(move |x| (x, y))
+            })
             .collect()
     }
 }
