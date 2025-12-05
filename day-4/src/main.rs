@@ -70,11 +70,11 @@ impl Grid {
     }
 
     fn cell(&self, x: usize, y: usize) -> Cell {
-        self.cells[y * self.height + x]
+        self.cells[y * self.width + x]
     }
 
     fn set_cell(&mut self, x: usize, y: usize, cell: Cell) {
-        self.cells[y * self.height + x] = cell
+        self.cells[y * self.width + x] = cell
     }
 
     fn adjacent_roll_count(&self, x: usize, y: usize) -> usize {
