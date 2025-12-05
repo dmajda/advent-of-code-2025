@@ -165,7 +165,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn grid_count_accessible_rolls_works() {
+    fn grid_works() {
         let lines = vec![
             "..@@.@@@@.",
             "@@@.@.@.@@",
