@@ -83,24 +83,15 @@ impl Grid {
         }
     }
 
-    fn adjacent_cell_coords(
-        &self,
-        x: usize,
-        y: usize,
-    ) -> impl Iterator<Item = (usize, usize)> + use<> {
-        let x = x as isize;
-        let y = y as isize;
-
-        // Besides the type coercion, these variables also prevent borrowing
-        // `self` by the returned iterator.
-        let width = self.width as isize;
-        let height = self.height as isize;
-
+    fn adjacent_cell_coords(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
         Grid::ADJACENT_OFFSETS
             .iter()
-            .map(move |&(dx, dy)| (x + dx, y + dy))
-            .filter(move |&(x, y)| x >= 0 && x < width && y >= 0 && y < height)
+            .map(move |&(dx, dy)| (x as isize + dx, y as isize + dy))
+            .filter(move |&(x, y)| {
+                x >= 0 && x < self.width as isize && y >= 0 && y < self.height as isize
+            })
             .map(|(x, y)| (x as usize, y as usize))
+            .collect()
     }
 }
 
