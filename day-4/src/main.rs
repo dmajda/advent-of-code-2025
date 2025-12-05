@@ -11,7 +11,8 @@ enum Cell {
 struct Grid {
     width: usize,
     height: usize,
-    cells: Vec<Vec<Cell>>,
+    cells: Vec<Cell>,
+    adjacent_roll_counts: Vec<usize>,
 }
 
 impl Grid {
@@ -26,15 +27,22 @@ impl Grid {
         (1, 1),
     ];
 
-    pub fn new(cells: Vec<Vec<Cell>>) -> Grid {
-        let height = cells.len();
-        let width = cells.first().unwrap().len();
-
+    pub fn new(width: usize, height: usize) -> Grid {
         Grid {
             width,
             height,
-            cells,
+            cells: vec![Cell::Empty; width * height],
+            adjacent_roll_counts: vec![0; width * height],
         }
+    }
+
+    pub fn add_roll(&mut self, x: usize, y: usize) {
+        assert!(x < self.width);
+        assert!(y < self.height);
+        assert!(self.cell(x, y) == Cell::Empty);
+
+        self.set_cell(x, y, Cell::Roll);
+        self.update_adjacent_roll_counts(x, y, 1);
     }
 
     pub fn accessible_roll_count(&self) -> usize {
@@ -42,7 +50,7 @@ impl Grid {
 
         for y in 0..self.height {
             for x in 0..self.width {
-                if self.cells[y][x] == Cell::Roll && self.adjacent_roll_count(x, y) < 4 {
+                if self.cell(x, y) == Cell::Roll && self.adjacent_roll_count(x, y) < 4 {
                     count += 1;
                 }
             }
@@ -51,36 +59,48 @@ impl Grid {
         count
     }
 
+    fn cell(&self, x: usize, y: usize) -> Cell {
+        self.cells[y * self.height + x]
+    }
+
+    fn set_cell(&mut self, x: usize, y: usize, cell: Cell) {
+        self.cells[y * self.height + x] = cell
+    }
+
     fn adjacent_roll_count(&self, x: usize, y: usize) -> usize {
+        self.adjacent_roll_counts[y * self.height + x]
+    }
+
+    fn set_adjacent_roll_count(&mut self, x: usize, y: usize, count: usize) {
+        self.adjacent_roll_counts[y * self.height + x] = count
+    }
+
+    fn update_adjacent_roll_counts(&mut self, x: usize, y: usize, delta: isize) {
+        for (x, y) in self.adjacent_cell_coords(x, y) {
+            let count = (self.adjacent_roll_count(x, y) as isize + delta) as usize;
+
+            self.set_adjacent_roll_count(x, y, count);
+        }
+    }
+
+    fn adjacent_cell_coords(
+        &self,
+        x: usize,
+        y: usize,
+    ) -> impl Iterator<Item = (usize, usize)> + use<> {
+        let x = x as isize;
+        let y = y as isize;
+
+        // Besides the type coercion, these variables also prevent borrowing
+        // `self` by the returned iterator.
+        let width = self.width as isize;
+        let height = self.height as isize;
+
         Grid::ADJACENT_OFFSETS
             .iter()
-            .filter_map(|&(dx, dy)| self.get(x as isize + dx, y as isize + dy))
-            .filter(|&cell| cell == Cell::Roll)
-            .count()
-    }
-
-    fn get(&self, x: isize, y: isize) -> Option<Cell> {
-        if x < 0 || x >= self.width as isize || y < 0 || y >= self.height as isize {
-            return None;
-        }
-
-        Some(self.cells[y as usize][x as usize])
-    }
-}
-
-fn parse_lines(lines: Vec<String>) -> Vec<Vec<Cell>> {
-    lines.into_iter().map(parse_line).collect()
-}
-
-fn parse_line(line: String) -> Vec<Cell> {
-    line.chars().map(parse_char).collect()
-}
-
-fn parse_char(ch: char) -> Cell {
-    match ch {
-        '.' => Cell::Empty,
-        '@' => Cell::Roll,
-        _ => unreachable!(),
+            .map(move |&(dx, dy)| (x + dx, y + dy))
+            .filter(move |&(x, y)| x >= 0 && x < width && y >= 0 && y < height)
+            .map(|(x, y)| (x as usize, y as usize))
     }
 }
 
@@ -103,7 +123,15 @@ fn main() -> Result<()> {
         "grid cell contains an invalid character"
     );
 
-    let grid = Grid::new(parse_lines(lines));
+    let mut grid = Grid::new(lines.first().unwrap().chars().count(), lines.len());
+
+    for (y, line) in lines.iter().enumerate() {
+        for (x, ch) in line.chars().enumerate() {
+            if ch == '@' {
+                grid.add_roll(x, y);
+            }
+        }
+    }
 
     println!("{}", grid.accessible_roll_count());
     Ok(())
@@ -115,22 +143,28 @@ mod tests {
 
     #[test]
     fn grid_count_accessible_rolls_works() {
-        const E: Cell = Cell::Empty;
-        const R: Cell = Cell::Roll;
-
-        let cells = vec![
-            vec![E, E, R, R, E, R, R, R, R, E],
-            vec![R, R, R, E, R, E, R, E, R, R],
-            vec![R, R, R, R, R, E, R, E, R, R],
-            vec![R, E, R, R, R, R, E, E, R, E],
-            vec![R, R, E, R, R, R, R, E, R, R],
-            vec![E, R, R, R, R, R, R, R, E, R],
-            vec![E, R, E, R, E, R, E, R, R, R],
-            vec![R, E, R, R, R, E, R, R, R, R],
-            vec![E, R, R, R, R, R, R, R, R, E],
-            vec![R, E, R, E, R, R, R, E, R, E],
+        let lines = vec![
+            "..@@.@@@@.",
+            "@@@.@.@.@@",
+            "@@@@@.@.@@",
+            "@.@@@@..@.",
+            "@@.@@@@.@@",
+            ".@@@@@@@.@",
+            ".@.@.@.@@@",
+            "@.@@@.@@@@",
+            ".@@@@@@@@.",
+            "@.@.@@@.@.",
         ];
-        let grid = Grid::new(cells);
+
+        let mut grid = Grid::new(10, 10);
+
+        for (y, line) in lines.iter().enumerate() {
+            for (x, ch) in line.chars().enumerate() {
+                if ch == '@' {
+                    grid.add_roll(x, y);
+                }
+            }
+        }
 
         assert_eq!(grid.accessible_roll_count(), 13);
     }
