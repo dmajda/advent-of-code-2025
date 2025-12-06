@@ -78,7 +78,7 @@ fn main() -> Result<()> {
                     number_2 = 10 * number_2 + digit;
                 }
                 b' ' => (),
-                _ => bail!("invalid character: {}", b as char),
+                _ => bail!("invalid character: {:?}", b as char),
             }
         }
 
@@ -89,7 +89,7 @@ fn main() -> Result<()> {
             b'+' => op = Op::Add,
             b'*' => op = Op::Mul,
             b' ' => (),
-            _ => bail!("invalid character: {}", b as char),
+            _ => bail!("invalid character: {:?}", b as char),
         }
     }
 
