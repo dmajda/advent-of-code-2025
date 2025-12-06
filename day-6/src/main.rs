@@ -48,27 +48,41 @@ fn main() -> Result<()> {
     let bytes = lines.iter().map(|line| line.bytes()).collect::<Vec<_>>();
     let cols = ManyZip::new(bytes);
 
-    let mut numbers = vec![0; lines.len() - 1];
+    let mut numbers_1 = vec![0; lines.len() - 1];
+    let mut numbers_2 = vec![];
     let mut op = Op::Add;
 
-    let mut results = vec![];
+    let mut results_1 = vec![];
+    let mut results_2 = vec![];
 
     for col in cols {
         if col.iter().all(|&b| b == b' ') {
-            results.push(compute_problem(&numbers, op));
-            numbers.fill(0);
+            results_1.push(compute_problem(&numbers_1, op));
+            results_2.push(compute_problem(&numbers_2, op));
+
+            numbers_1.fill(0);
+            numbers_2.clear();
 
             continue;
         }
 
+        let mut number_2 = 0;
+
         for i in 0..col.len() - 1 {
             let b = col[i];
             match b {
-                b'0'..=b'9' => numbers[i] = 10 * numbers[i] + (b - b'0') as u64,
+                b'0'..=b'9' => {
+                    let digit = (b - b'0') as u64;
+
+                    numbers_1[i] = 10 * numbers_1[i] + digit;
+                    number_2 = 10 * number_2 + digit;
+                }
                 b' ' => (),
                 _ => bail!("invalid character: {}", b as char),
             }
         }
+
+        numbers_2.push(number_2);
 
         let b = col[col.len() - 1];
         match b {
@@ -79,10 +93,13 @@ fn main() -> Result<()> {
         }
     }
 
-    results.push(compute_problem(&numbers, op));
+    results_1.push(compute_problem(&numbers_1, op));
+    results_2.push(compute_problem(&numbers_2, op));
 
-    let total = results.into_iter().sum::<u64>();
+    let total_1 = results_1.into_iter().sum::<u64>();
+    let total_2 = results_2.into_iter().sum::<u64>();
 
-    println!("{total}");
+    println!("{total_1}");
+    println!("{total_2}");
     Ok(())
 }
