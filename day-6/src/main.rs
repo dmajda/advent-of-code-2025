@@ -30,33 +30,58 @@ where
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+enum Op {
+    Add,
+    Mul,
+}
+
+fn compute_problem(numbers: &[u64], op: Op) -> u64 {
+    match op {
+        Op::Add => numbers.into_iter().sum(),
+        Op::Mul => numbers.into_iter().product(),
+    }
+}
+
 fn main() -> Result<()> {
     let lines = io::stdin().lines().collect::<Result<Vec<_>, _>>()?;
-    let cells = lines
-        .iter()
-        .map(|line| line.split_whitespace())
-        .collect::<Vec<_>>();
-    let cols = ManyZip::new(cells);
+    let bytes = lines.iter().map(|line| line.bytes()).collect::<Vec<_>>();
+    let cols = ManyZip::new(bytes);
 
-    let total = cols
-        .map(|col| {
-            let numbers = col[..col.len() - 1]
-                .iter()
-                .map(|cell| cell.parse::<u64>())
-                .collect::<Result<Vec<_>, _>>()?;
-            let op = col[col.len() - 1];
+    let mut numbers = vec![0; lines.len() - 1];
+    let mut op = Op::Add;
 
-            let result = match op {
-                "+" => numbers.into_iter().sum::<u64>(),
-                "*" => numbers.into_iter().product::<u64>(),
-                _ => bail!("invalid operation: {op:?}"),
-            };
+    let mut results = vec![];
 
-            Ok(result)
-        })
-        .collect::<Result<Vec<_>, _>>()?
-        .into_iter()
-        .sum::<u64>();
+    for col in cols {
+        if col.iter().all(|&b| b == b' ') {
+            results.push(compute_problem(&numbers, op));
+            numbers.fill(0);
+
+            continue;
+        }
+
+        for i in 0..col.len() - 1 {
+            let b = col[i];
+            match b {
+                b'0'..=b'9' => numbers[i] = 10 * numbers[i] + (b - b'0') as u64,
+                b' ' => (),
+                _ => bail!("invalid character: {}", b as char),
+            }
+        }
+
+        let b = col[col.len() - 1];
+        match b {
+            b'+' => op = Op::Add,
+            b'*' => op = Op::Mul,
+            b' ' => (),
+            _ => bail!("invalid character: {}", b as char),
+        }
+    }
+
+    results.push(compute_problem(&numbers, op));
+
+    let total = results.into_iter().sum::<u64>();
 
     println!("{total}");
     Ok(())
