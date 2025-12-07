@@ -4,7 +4,7 @@ use anyhow::{Result, bail, ensure};
 
 fn main() -> Result<()> {
     let lines = io::stdin().lines().collect::<Result<Vec<_>, _>>()?;
-    let mut rows = lines
+    let rows = lines
         .iter()
         .map(|line| line.bytes().collect::<Vec<_>>())
         .collect::<Vec<_>>();
@@ -15,30 +15,34 @@ fn main() -> Result<()> {
         "diagram rows don't have the same number of columns"
     );
 
+    let mut prev_beams = vec![false; rows[0].len()];
+    let mut next_beams = vec![false; rows[0].len()];
+
     let mut count = 0;
 
-    for i in 1..rows.len() {
+    for i in 0..rows.len() {
         for j in 0..rows[i].len() {
-            match rows[i - 1][j] {
-                b'S' | b'|' => match rows[i][j] {
-                    b'.' => rows[i][j] = b'|',
-                    b'^' => {
-                        if j > 0 {
-                            rows[i][j - 1] = b'|';
-                        }
-                        if j < rows[i].len() - 1 {
-                            rows[i][j + 1] = b'|';
-                        }
+            match rows[i][j] {
+                b'S' => next_beams[j] = true,
+                b'.' => next_beams[j] = next_beams[j] || prev_beams[j],
+                b'^' => {
+                    if j > 0 {
+                        next_beams[j - 1] = next_beams[j - 1] || prev_beams[j];
+                    }
+                    if j < next_beams.len() - 1 {
+                        next_beams[j + 1] = next_beams[j + 1] || prev_beams[j];
+                    }
 
+                    if prev_beams[j] {
                         count += 1;
                     }
-                    b'S' | b'|' => (),
-                    _ => bail!("invalid character: {:?}", rows[i][j] as char),
-                },
-                b'.' | b'^' => (),
-                _ => bail!("invalid character: {:?}", rows[i - 1][j] as char),
+                }
+                _ => bail!("invalid character: {:?}", rows[i][j] as char),
             }
         }
+
+        prev_beams.copy_from_slice(&next_beams);
+        next_beams.fill(false);
     }
 
     println!("{count}");
