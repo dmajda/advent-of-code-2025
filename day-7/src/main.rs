@@ -15,26 +15,26 @@ fn main() -> Result<()> {
         "diagram rows don't have the same number of columns"
     );
 
-    let mut prev_beams = vec![false; rows[0].len()];
-    let mut next_beams = vec![false; rows[0].len()];
+    let mut prev_beams = vec![0; rows[0].len()];
+    let mut next_beams = vec![0; rows[0].len()];
 
-    let mut count = 0;
+    let mut count_1 = 0;
 
     for i in 0..rows.len() {
         for j in 0..rows[i].len() {
             match rows[i][j] {
-                b'S' => next_beams[j] = true,
-                b'.' => next_beams[j] = next_beams[j] || prev_beams[j],
+                b'S' => next_beams[j] += 1,
+                b'.' => next_beams[j] += prev_beams[j],
                 b'^' => {
                     if j > 0 {
-                        next_beams[j - 1] = next_beams[j - 1] || prev_beams[j];
+                        next_beams[j - 1] += prev_beams[j];
                     }
                     if j < next_beams.len() - 1 {
-                        next_beams[j + 1] = next_beams[j + 1] || prev_beams[j];
+                        next_beams[j + 1] += prev_beams[j];
                     }
 
-                    if prev_beams[j] {
-                        count += 1;
+                    if prev_beams[j] > 0 {
+                        count_1 += 1;
                     }
                 }
                 _ => bail!("invalid character: {:?}", rows[i][j] as char),
@@ -42,9 +42,12 @@ fn main() -> Result<()> {
         }
 
         prev_beams.copy_from_slice(&next_beams);
-        next_beams.fill(false);
+        next_beams.fill(0);
     }
 
-    println!("{count}");
+    let count_2 = prev_beams.into_iter().sum::<u64>();
+
+    println!("{count_1}");
+    println!("{count_2}");
     Ok(())
 }
