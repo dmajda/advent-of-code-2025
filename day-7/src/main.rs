@@ -4,10 +4,7 @@ use anyhow::{Result, bail, ensure};
 
 fn main() -> Result<()> {
     let lines = io::stdin().lines().collect::<Result<Vec<_>, _>>()?;
-    let rows = lines
-        .iter()
-        .map(|line| line.bytes().collect::<Vec<_>>())
-        .collect::<Vec<_>>();
+    let rows = lines.iter().map(String::as_bytes).collect::<Vec<_>>();
 
     ensure!(!rows.is_empty(), "diagram has no rows");
     ensure!(
