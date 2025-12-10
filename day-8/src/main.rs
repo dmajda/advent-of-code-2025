@@ -71,9 +71,11 @@ impl PartialEq for Dist {
 impl Eq for Dist {}
 
 struct Playground {
+    #[cfg(debug_assertions)]
     jboxes: Vec<JBox>,
     circuits: Vec<Vec<usize>>,
     index: Vec<usize>,
+    dists: Vec<Dist>,
 }
 
 impl Playground {
@@ -81,17 +83,43 @@ impl Playground {
         let circuits = (0..jboxes.len()).map(|i| vec![i]).collect();
         let index = (0..jboxes.len()).collect();
 
+        let dists = Self::compute_dists(&jboxes);
+
         Playground {
+            #[cfg(debug_assertions)]
             jboxes,
             circuits,
             index,
+            dists,
         }
     }
 
-    pub fn connect_jboxes(&mut self, k: usize) {
-        let dists = self.compute_dists();
+    fn compute_dists(jboxes: &[JBox]) -> Vec<Dist> {
+        // If there are `n` distinct juntion boxes, then there are `n * (n - 1)
+        // / 2` mutual distances (we ignore the zero distance each box has to
+        // itself). We compute them and return them sorted from the shortest to
+        // the longest.
 
-        for dist in &dists[..k] {
+        let mut dists = Vec::with_capacity(jboxes.len() * (jboxes.len() - 1) / 2);
+
+        for i in 0..jboxes.len() {
+            for j in 0..i {
+                let dist = Dist {
+                    dist: jboxes[i].distance(&jboxes[j]),
+                    jbox_index_1: j,
+                    jbox_index_2: i,
+                };
+
+                dists.push(dist);
+            }
+        }
+
+        dists.sort();
+        dists
+    }
+
+    pub fn connect_jboxes(&mut self, k: usize) {
+        for dist in &self.dists[..k] {
             // Get indices of circuits the two boxes belong to.
             let circuit_index_1 = self.index[dist.jbox_index_1];
             let circuit_index_2 = self.index[dist.jbox_index_2];
@@ -144,30 +172,6 @@ impl Playground {
                 }
             })
             .collect()
-    }
-
-    fn compute_dists(&self) -> Vec<Dist> {
-        // If there are `n` distinct juntion boxes, then there are `n * (n - 1)
-        // / 2` mutual distances (we ignore the zero distance each box has to
-        // itself). We compute them and return them sorted from the shortest to
-        // the longest.
-
-        let mut dists = Vec::with_capacity(self.jboxes.len() * (self.jboxes.len() - 1) / 2);
-
-        for i in 0..self.jboxes.len() {
-            for j in 0..i {
-                let dist = Dist {
-                    dist: self.jboxes[i].distance(&self.jboxes[j]),
-                    jbox_index_1: j,
-                    jbox_index_2: i,
-                };
-
-                dists.push(dist);
-            }
-        }
-
-        dists.sort();
-        dists
     }
 }
 
