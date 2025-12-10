@@ -237,36 +237,35 @@ fn parse_jbox(line: &str) -> Result<JBox> {
     Ok(jbox)
 }
 
-const SHORTEST_CONNECTION_MIN: usize = 1000;
-const TOP_CIRCUIT_MIN: usize = 3;
+const CONNECT_COUNT: usize = 1000;
+const TOP_COUNT: usize = 3;
 
 fn main() -> Result<()> {
     let lines = io::stdin().lines().collect::<Result<Vec<_>, _>>()?;
     let jboxes = parse_jboxes(&lines)?;
 
+    ensure!(
+        !jboxes.is_empty(),
+        "playground doesn't have any junction boxes"
+    );
+
     let mut playground = Playground::new(jboxes);
 
     ensure!(
-        playground.dists().len() >= SHORTEST_CONNECTION_MIN,
+        playground.dists().len() >= CONNECT_COUNT,
         "playground doesn't have enough possible connections"
     );
 
-    let circuit_sizes = playground.connect_k_closest(SHORTEST_CONNECTION_MIN);
+    let circuit_sizes = playground.connect_k_closest(CONNECT_COUNT);
 
     ensure!(
-        circuit_sizes.len() >= TOP_CIRCUIT_MIN,
-        "playground doesn't have enough circuits after connecting first {SHORTEST_CONNECTION_MIN} boxes"
-    );
-
-    let result_1 = circuit_sizes[..TOP_CIRCUIT_MIN].iter().product::<usize>();
-
-    ensure!(
-        playground.dists().len() >= 1,
-        "playground doesn't have enough possible connections after connecting first {SHORTEST_CONNECTION_MIN} boxes"
+        circuit_sizes.len() >= TOP_COUNT,
+        "playground doesn't have enough circuits"
     );
 
     let (jbox_1, jbox_2) = playground.connect_all();
 
+    let result_1 = circuit_sizes[..TOP_COUNT].iter().product::<usize>();
     let result_2 = jbox_1.x * jbox_2.x;
 
     println!("{:?}", result_1);
