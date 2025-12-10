@@ -71,9 +71,9 @@ impl PartialEq for Dist {
 impl Eq for Dist {}
 
 struct Playground {
-    #[cfg(debug_assertions)]
     jboxes: Vec<JBox>,
     circuits: Vec<Vec<usize>>,
+    count: usize,
     index: Vec<usize>,
     dists: Vec<Dist>,
 }
@@ -81,14 +81,15 @@ struct Playground {
 impl Playground {
     pub fn new(jboxes: Vec<JBox>) -> Playground {
         let circuits = (0..jboxes.len()).map(|i| vec![i]).collect();
+        let count = jboxes.len();
         let index = (0..jboxes.len()).collect();
 
         let dists = Self::compute_dists(&jboxes);
 
         Playground {
-            #[cfg(debug_assertions)]
             jboxes,
             circuits,
+            count,
             index,
             dists,
         }
@@ -123,7 +124,7 @@ impl Playground {
         &self.dists
     }
 
-    pub fn connect_jboxes(&mut self, k: usize) -> Vec<usize> {
+    pub fn connect_k_closest(&mut self, k: usize) -> Vec<usize> {
         for _ in 0..k {
             self.connect_closest();
         }
@@ -131,7 +132,20 @@ impl Playground {
         self.circuit_sizes()
     }
 
-    pub fn connect_closest(&mut self) {
+    pub fn connect_all(&mut self) -> (&JBox, &JBox) {
+        loop {
+            let dist = self.connect_closest();
+
+            if self.count == 1 {
+                let jbox_1 = &self.jboxes[dist.jbox_index_1];
+                let jbox_2 = &self.jboxes[dist.jbox_index_2];
+
+                return (jbox_1, jbox_2);
+            }
+        }
+    }
+
+    pub fn connect_closest(&mut self) -> Dist {
         // Get the two closest boxes.
         let dist = self.dists.pop().unwrap();
 
@@ -150,7 +164,7 @@ impl Playground {
                 circuit_index_1
             );
 
-            return;
+            return dist;
         }
 
         // First, update the index.
@@ -164,6 +178,9 @@ impl Playground {
         let circuit_1 = &mut self.circuits[circuit_index_1];
         circuit_1.append(circuit_2);
 
+        // Finally, update the count.
+        self.count -= 1;
+
         #[cfg(debug_assertions)]
         println!(
             "{}-{} ({:.2}): merged circuit {} into circuit {}",
@@ -173,6 +190,8 @@ impl Playground {
             circuit_index_2,
             circuit_index_1
         );
+
+        return dist;
     }
 
     fn circuit_sizes(&self) -> Vec<usize> {
@@ -227,17 +246,27 @@ fn main() -> Result<()> {
         "playground doesn't have enough possible connections"
     );
 
-    let mut circuit_sizes = playground.connect_jboxes(SHORTEST_CONNECTION_MIN);
+    let mut circuit_sizes = playground.connect_k_closest(SHORTEST_CONNECTION_MIN);
     circuit_sizes.sort();
     circuit_sizes.reverse();
 
     ensure!(
         circuit_sizes.len() >= TOP_CIRCUIT_MIN,
-        "playground doesn't have enough circuits after connecting the boxes"
+        "playground doesn't have enough circuits after connecting first {SHORTEST_CONNECTION_MIN} boxes"
     );
 
-    let result = circuit_sizes[..TOP_CIRCUIT_MIN].iter().product::<usize>();
+    let result_1 = circuit_sizes[..TOP_CIRCUIT_MIN].iter().product::<usize>();
 
-    println!("{:?}", result);
+    ensure!(
+        playground.dists().len() >= 1,
+        "playground doesn't have enough possible connections after connecting first {SHORTEST_CONNECTION_MIN} boxes"
+    );
+
+    let (jbox_1, jbox_2) = playground.connect_all();
+
+    let result_2 = jbox_1.x * jbox_2.x;
+
+    println!("{:?}", result_1);
+    println!("{:?}", result_2);
     Ok(())
 }
