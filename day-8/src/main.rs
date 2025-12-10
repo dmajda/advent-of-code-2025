@@ -123,10 +123,12 @@ impl Playground {
         &self.dists
     }
 
-    pub fn connect_jboxes(&mut self, k: usize) {
+    pub fn connect_jboxes(&mut self, k: usize) -> Vec<usize> {
         for _ in 0..k {
             self.connect_closest();
         }
+
+        self.circuit_sizes()
     }
 
     pub fn connect_closest(&mut self) {
@@ -173,7 +175,7 @@ impl Playground {
         );
     }
 
-    pub fn circuit_sizes(&self) -> Vec<usize> {
+    fn circuit_sizes(&self) -> Vec<usize> {
         self.circuits
             .iter()
             .filter_map(|circuit| {
@@ -225,9 +227,7 @@ fn main() -> Result<()> {
         "playground doesn't have enough possible connections"
     );
 
-    playground.connect_jboxes(SHORTEST_CONNECTION_MIN);
-
-    let mut circuit_sizes = playground.circuit_sizes();
+    let mut circuit_sizes = playground.connect_jboxes(SHORTEST_CONNECTION_MIN);
     circuit_sizes.sort();
     circuit_sizes.reverse();
 
