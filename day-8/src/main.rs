@@ -1,5 +1,4 @@
 use std::cmp::Ordering;
-use std::collections::BinaryHeap;
 use std::fmt;
 use std::io;
 use std::mem;
@@ -90,9 +89,9 @@ impl Playground {
     }
 
     pub fn connect_jboxes(&mut self, k: usize) {
-        let shortest_dists = self.compute_shortest_dists(k);
+        let dists = self.compute_dists();
 
-        for dist in shortest_dists {
+        for dist in &dists[..k] {
             // Get indices of circuits the two boxes belong to.
             let circuit_index_1 = self.index[dist.jbox_index_1];
             let circuit_index_2 = self.index[dist.jbox_index_2];
@@ -147,13 +146,13 @@ impl Playground {
             .collect()
     }
 
-    fn compute_shortest_dists(&self, k: usize) -> Vec<Dist> {
+    fn compute_dists(&self) -> Vec<Dist> {
         // If there are `n` distinct juntion boxes, then there are `n * (n - 1)
         // / 2` mutual distances (we ignore the zero distance each box has to
-        // itself). We compute the `k` shortest ones using a binary heap and
-        // return them sorted from the shortest to the longest.
+        // itself). We compute them and return them sorted from the shortest to
+        // the longest.
 
-        let mut dists = BinaryHeap::with_capacity(k + 1);
+        let mut dists = Vec::with_capacity(self.jboxes.len() * (self.jboxes.len() - 1) / 2);
 
         for i in 0..self.jboxes.len() {
             for j in 0..i {
@@ -164,13 +163,11 @@ impl Playground {
                 };
 
                 dists.push(dist);
-                if dists.len() > k {
-                    dists.pop();
-                }
             }
         }
 
-        dists.into_sorted_vec()
+        dists.sort();
+        dists
     }
 }
 
