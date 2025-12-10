@@ -195,7 +195,8 @@ impl Playground {
     }
 
     fn circuit_sizes(&self) -> Vec<usize> {
-        self.circuits
+        let mut sizes: Vec<usize> = self
+            .circuits
             .iter()
             .filter_map(|circuit| {
                 if !circuit.is_empty() {
@@ -204,7 +205,11 @@ impl Playground {
                     None
                 }
             })
-            .collect()
+            .collect();
+
+        sizes.sort();
+        sizes.reverse();
+        sizes
     }
 }
 
@@ -246,9 +251,7 @@ fn main() -> Result<()> {
         "playground doesn't have enough possible connections"
     );
 
-    let mut circuit_sizes = playground.connect_k_closest(SHORTEST_CONNECTION_MIN);
-    circuit_sizes.sort();
-    circuit_sizes.reverse();
+    let circuit_sizes = playground.connect_k_closest(SHORTEST_CONNECTION_MIN);
 
     ensure!(
         circuit_sizes.len() >= TOP_CIRCUIT_MIN,
