@@ -121,48 +121,52 @@ impl Playground {
 
     pub fn connect_jboxes(&mut self, k: usize) {
         for _ in 0..k {
-            // Get the two closest boxes.
-            let dist = self.dists.pop().unwrap();
+            self.connect_closest();
+        }
+    }
 
-            // Get indices of circuits the two boxes belong to.
-            let circuit_index_1 = self.index[dist.jbox_index_1];
-            let circuit_index_2 = self.index[dist.jbox_index_2];
+    pub fn connect_closest(&mut self) {
+        // Get the two closest boxes.
+        let dist = self.dists.pop().unwrap();
 
-            // If the circuits are the same, there is nothing to do.
-            if circuit_index_1 == circuit_index_2 {
-                #[cfg(debug_assertions)]
-                println!(
-                    "{}-{} ({:.2}): already connected to circuit {}",
-                    self.jboxes[dist.jbox_index_1],
-                    self.jboxes[dist.jbox_index_2],
-                    dist.dist,
-                    circuit_index_1
-                );
+        // Get indices of circuits the two boxes belong to.
+        let circuit_index_1 = self.index[dist.jbox_index_1];
+        let circuit_index_2 = self.index[dist.jbox_index_2];
 
-                continue;
-            }
-
-            // First, update the index.
-            let circuit_2 = &self.circuits[circuit_index_2];
-            for &jbox_index in circuit_2 {
-                self.index[jbox_index] = circuit_index_1;
-            }
-
-            // Now merge the circuits.
-            let circuit_2 = &mut mem::take(&mut self.circuits[circuit_index_2]);
-            let circuit_1 = &mut self.circuits[circuit_index_1];
-            circuit_1.append(circuit_2);
-
+        // If the circuits are the same, there is nothing to do.
+        if circuit_index_1 == circuit_index_2 {
             #[cfg(debug_assertions)]
             println!(
-                "{}-{} ({:.2}): merged circuit {} into circuit {}",
+                "{}-{} ({:.2}): already connected to circuit {}",
                 self.jboxes[dist.jbox_index_1],
                 self.jboxes[dist.jbox_index_2],
                 dist.dist,
-                circuit_index_2,
                 circuit_index_1
             );
+
+            return;
         }
+
+        // First, update the index.
+        let circuit_2 = &self.circuits[circuit_index_2];
+        for &jbox_index in circuit_2 {
+            self.index[jbox_index] = circuit_index_1;
+        }
+
+        // Now merge the circuits.
+        let circuit_2 = &mut mem::take(&mut self.circuits[circuit_index_2]);
+        let circuit_1 = &mut self.circuits[circuit_index_1];
+        circuit_1.append(circuit_2);
+
+        #[cfg(debug_assertions)]
+        println!(
+            "{}-{} ({:.2}): merged circuit {} into circuit {}",
+            self.jboxes[dist.jbox_index_1],
+            self.jboxes[dist.jbox_index_2],
+            dist.dist,
+            circuit_index_2,
+            circuit_index_1
+        );
     }
 
     pub fn circuit_sizes(&self) -> Vec<usize> {
