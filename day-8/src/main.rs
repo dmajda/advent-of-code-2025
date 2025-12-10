@@ -136,7 +136,7 @@ impl Playground {
         self.circuit_sizes()
     }
 
-    pub fn connect_all(&mut self) -> (&JBox, &JBox) {
+    pub fn connect_remaining(&mut self) -> (&JBox, &JBox) {
         assert!(!self.dists.is_empty());
 
         loop {
@@ -269,7 +269,7 @@ fn main() -> Result<()> {
         "playground doesn't have enough circuits"
     );
 
-    let (jbox_1, jbox_2) = playground.connect_all();
+    let (jbox_1, jbox_2) = playground.connect_remaining();
 
     let result_1 = circuit_sizes[..TOP_COUNT].iter().product::<usize>();
     let result_2 = jbox_1.x * jbox_2.x;
