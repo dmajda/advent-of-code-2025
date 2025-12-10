@@ -119,6 +119,10 @@ impl Playground {
         dists
     }
 
+    pub fn dists(&self) -> &Vec<Dist> {
+        &self.dists
+    }
+
     pub fn connect_jboxes(&mut self, k: usize) {
         for _ in 0..k {
             self.connect_closest();
@@ -214,12 +218,13 @@ fn main() -> Result<()> {
     let lines = io::stdin().lines().collect::<Result<Vec<_>, _>>()?;
     let jboxes = parse_jboxes(&lines)?;
 
+    let mut playground = Playground::new(jboxes);
+
     ensure!(
-        jboxes.len() * (jboxes.len() - 1) / 2 >= SHORTEST_CONNECTION_MIN,
+        playground.dists().len() >= SHORTEST_CONNECTION_MIN,
         "playground doesn't have enough possible connections"
     );
 
-    let mut playground = Playground::new(jboxes);
     playground.connect_jboxes(SHORTEST_CONNECTION_MIN);
 
     let mut circuit_sizes = playground.circuit_sizes();
