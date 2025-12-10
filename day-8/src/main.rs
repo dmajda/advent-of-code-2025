@@ -80,6 +80,8 @@ struct Playground {
 
 impl Playground {
     pub fn new(jboxes: Vec<JBox>) -> Playground {
+        assert!(!jboxes.is_empty());
+
         let circuits = (0..jboxes.len()).map(|i| vec![i]).collect();
         let count = jboxes.len();
         let index = (0..jboxes.len()).collect();
@@ -125,6 +127,8 @@ impl Playground {
     }
 
     pub fn connect_k_closest(&mut self, k: usize) -> Vec<usize> {
+        assert!(self.dists.len() >= k);
+
         for _ in 0..k {
             self.connect_closest();
         }
@@ -133,6 +137,8 @@ impl Playground {
     }
 
     pub fn connect_all(&mut self) -> (&JBox, &JBox) {
+        assert!(!self.dists.is_empty());
+
         loop {
             let dist = self.connect_closest();
 
