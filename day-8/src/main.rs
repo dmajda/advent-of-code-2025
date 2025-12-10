@@ -97,8 +97,8 @@ impl Playground {
     fn compute_dists(jboxes: &[JBox]) -> Vec<Dist> {
         // If there are `n` distinct juntion boxes, then there are `n * (n - 1)
         // / 2` mutual distances (we ignore the zero distance each box has to
-        // itself). We compute them and return them sorted from the shortest to
-        // the longest.
+        // itself). We compute them and return them sorted from the longest to
+        // the shortest.
 
         let mut dists = Vec::with_capacity(jboxes.len() * (jboxes.len() - 1) / 2);
 
@@ -115,11 +115,15 @@ impl Playground {
         }
 
         dists.sort();
+        dists.reverse();
         dists
     }
 
     pub fn connect_jboxes(&mut self, k: usize) {
-        for dist in &self.dists[..k] {
+        for _ in 0..k {
+            // Get the two closest boxes.
+            let dist = self.dists.pop().unwrap();
+
             // Get indices of circuits the two boxes belong to.
             let circuit_index_1 = self.index[dist.jbox_index_1];
             let circuit_index_2 = self.index[dist.jbox_index_2];
