@@ -1,3 +1,33 @@
+// I used the following visualization on CodePen to help me see the shape of the
+// problem.
+//
+// HTML
+//
+//     <canvas id="canvas" width="1000" height="1000"></canvas>
+//
+// JS
+//
+//     const SCALE = 100;
+//
+//     const tiles = [
+//       // ...
+//     ];
+//
+//     const canvas = document.getElementById("canvas");
+//     const ctx = canvas.getContext("2d");
+//
+//     ctx.beginPath();
+//
+//     ctx.moveTo(tiles[0].x / SCALE, tiles[0].y / SCALE);
+//     for (let tile of tiles.slice(1)) {
+//       ctx.lineTo(tile.x / SCALE, tile.y / SCALE);
+//     }
+//     ctx.lineTo(tiles[0].x / SCALE, tiles[0].y / SCALE);
+//
+//     ctx.closePath();
+//     ctx.stroke();
+//
+
 use std::collections::{HashMap, HashSet};
 use std::io;
 use std::iter::Peekable;
