@@ -3,10 +3,11 @@ use std::io;
 use std::sync::LazyLock;
 
 use anyhow::{Result, anyhow, bail, ensure};
+use microlp::{OptimizationDirection, Problem};
 use regex::Regex;
 
 // I chose to represent indicator light configurations as well as button wirings
-// as bit sets backed by `usize`. This means:
+// as bit sets backed by `usize`. This means that in part 1:
 //
 //   1. Pressing a button can be expressed as XORing an indicator light
 //      configuration by the button wiring.
@@ -25,10 +26,10 @@ struct Machine {
     size: usize,
     lights: usize,
     wirings: Vec<usize>,
-    _joltages: Vec<u32>,
+    joltages: Vec<u32>,
 }
 
-fn find_min_presses(machine: &Machine) -> Option<u32> {
+fn find_min_presses_1(machine: &Machine) -> Option<u32> {
     let mut min_presses = vec![u32::MAX; 1 << machine.size];
     let mut queue = VecDeque::new();
 
@@ -58,6 +59,36 @@ fn find_min_presses(machine: &Machine) -> Option<u32> {
     }
 
     None
+}
+
+fn find_min_presses_2(machine: &Machine) -> Option<u32> {
+    let mut problem = Problem::new(OptimizationDirection::Minimize);
+
+    let vars = (0..machine.wirings.len())
+        .map(|_| problem.add_integer_var(1.0, (0, i32::MAX)))
+        .collect::<Vec<_>>();
+
+    for i in 0..machine.size {
+        let expr = machine
+            .wirings
+            .iter()
+            .zip(&vars)
+            .filter_map(|(&wiring, &var)| {
+                if wiring & (1 << i) != 0 {
+                    Some((var, 1.0))
+                } else {
+                    None
+                }
+            });
+
+        problem.add_constraint(expr, microlp::ComparisonOp::Eq, machine.joltages[i] as f64);
+    }
+
+    let Ok(solution) = problem.solve() else {
+        return None;
+    };
+
+    Some(solution.objective().round() as u32)
 }
 
 static MACHINE_RE: LazyLock<Regex> = LazyLock::new(|| {
@@ -93,11 +124,18 @@ fn parse_machine(line: &str) -> Result<Machine> {
         .collect::<Result<Vec<_>, _>>()?;
     let joltages = parse_joltages(parts[parts.len() - 1])?;
 
+    if joltages.len() != size {
+        bail!(
+            "indicator light diagram and joltage requirements have a different size: {:?}",
+            line
+        );
+    }
+
     let machine = Machine {
         size,
         lights,
         wirings,
-        _joltages: joltages,
+        joltages,
     };
 
     Ok(machine)
@@ -124,17 +162,17 @@ fn parse_lights(part: &str) -> Result<(usize, usize)> {
 }
 
 fn parse_wiring(part: &str, size: usize) -> Result<usize> {
-    let lights = part[1..part.len() - 1]
+    let indices = part[1..part.len() - 1]
         .split(",")
-        .map(|light| light.parse::<usize>().unwrap())
+        .map(|index| index.parse::<usize>().unwrap())
         .collect::<Vec<_>>();
 
     ensure!(
-        lights.iter().all(|&light| light < size),
-        "button wiring schematic contains invalid lights"
+        indices.iter().all(|&index| index < size),
+        "button wiring schematic contains invalid indices"
     );
 
-    let wiring = lights.into_iter().fold(0, |acc, light| acc | (1 << light));
+    let wiring = indices.into_iter().fold(0, |acc, index| acc | (1 << index));
 
     Ok(wiring)
 }
@@ -152,14 +190,21 @@ fn main() -> Result<()> {
     let lines = io::stdin().lines().collect::<Result<Vec<_>, _>>()?;
     let machines = parse_machines(&lines)?;
 
-    let min_presses = machines
+    let min_presses_1 = machines
         .iter()
-        .map(|machine| find_min_presses(machine))
+        .map(|machine| find_min_presses_1(machine))
         .collect::<Option<Vec<_>>>()
-        .ok_or_else(|| anyhow!("some machines can't be initialized"))?;
+        .ok_or_else(|| anyhow!("indicator lights can't be configured on some machines"))?;
+    let min_presses_2 = machines
+        .iter()
+        .map(|machine| find_min_presses_2(machine))
+        .collect::<Option<Vec<_>>>()
+        .ok_or_else(|| anyhow!("joltage level counters can't be configured on some machines"))?;
 
-    let total_min_presses = min_presses.iter().sum::<u32>();
+    let total_min_presses_1 = min_presses_1.iter().sum::<u32>();
+    let total_min_presses_2 = min_presses_2.iter().sum::<u32>();
 
-    println!("{:?}", total_min_presses);
+    println!("{:?}", total_min_presses_1);
+    println!("{:?}", total_min_presses_2);
     Ok(())
 }
