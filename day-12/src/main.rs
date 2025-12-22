@@ -18,6 +18,14 @@ struct Region {
     pub quantities: Vec<u32>,
 }
 
+#[derive(Debug)]
+struct Problem {
+    pub shapes: Vec<Shape>,
+    pub shape_width: u32,
+    pub shape_height: u32,
+    pub regions: Vec<Region>,
+}
+
 impl Region {
     pub fn area(&self) -> u32 {
         self.width * self.height
@@ -32,7 +40,7 @@ static INDEX_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+:+$").unwra
 static SHAPE_ROW_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[.#]+$").unwrap());
 static REGION_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+x\d+:(\s+\d+)*$").unwrap());
 
-fn parse_input(lines: &[String]) -> Result<(Vec<Shape>, u32, u32, Vec<Region>)> {
+fn parse_problem(lines: &[String]) -> Result<Problem> {
     let mut shapes = vec![];
     let mut regions = vec![];
 
@@ -138,16 +146,24 @@ fn parse_input(lines: &[String]) -> Result<(Vec<Shape>, u32, u32, Vec<Region>)> 
         regions.push(region);
     }
 
-    Ok((shapes, shape_width, shape_height, regions))
+    let problem = Problem {
+        shapes,
+        shape_width,
+        shape_height,
+        regions,
+    };
+
+    Ok(problem)
 }
 
 fn main() -> Result<()> {
     let lines = io::stdin().lines().collect::<Result<Vec<_>, _>>()?;
-    let (shapes, shape_width, shape_height, regions) = parse_input(&lines)?;
+    let problem = parse_problem(&lines)?;
 
     let mut count = 0;
-    for region in regions {
-        let shapes_total_area = shapes
+    for region in problem.regions {
+        let shapes_total_area = problem
+            .shapes
             .iter()
             .zip(&region.quantities)
             .map(|(shape, quantity)| shape.area * quantity)
@@ -157,7 +173,8 @@ fn main() -> Result<()> {
             continue;
         }
 
-        let simple_quantity = (region.width / shape_width) * (region.height / shape_height);
+        let simple_quantity =
+            (region.width / problem.shape_width) * (region.height / problem.shape_height);
         if simple_quantity >= region.total_quantity() {
             count += 1;
         } else {
