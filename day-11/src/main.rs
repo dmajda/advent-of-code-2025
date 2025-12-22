@@ -126,7 +126,7 @@ fn parse_devices(lines: &[String]) -> Result<HashMap<String, Vec<String>>> {
 
     for line in lines {
         if !DEVICE_RE.is_match(line) {
-            bail!("machine description has invalid format: {:?}", line);
+            bail!("device description has invalid format: {:?}", line);
         };
 
         let (label_part, outputs_part) = line.split_once(':').unwrap();
