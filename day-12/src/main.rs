@@ -52,6 +52,7 @@ fn parse_problem(lines: &[String]) -> Result<Problem> {
         lines.next();
 
         let index = line[0..line.len() - 1].parse::<usize>()?;
+
         ensure!(index == shapes.len(), "index has invalid value: {line:?}");
 
         let mut rows = vec![];
@@ -87,6 +88,7 @@ fn parse_problem(lines: &[String]) -> Result<Problem> {
             height,
             area,
         };
+
         shapes.push(shape);
 
         while let Some(&line) = lines.peek()
@@ -143,6 +145,7 @@ fn parse_problem(lines: &[String]) -> Result<Problem> {
             height,
             quantities,
         };
+
         regions.push(region);
     }
 
