@@ -1,11 +1,13 @@
 use std::io;
 use std::sync::LazyLock;
 
-use anyhow::{Result, ensure};
+use anyhow::{Result, bail, ensure};
 use regex::Regex;
 
 #[derive(Debug)]
 struct Shape {
+    pub width: u32,
+    pub height: u32,
     pub area: u32,
 }
 
@@ -20,13 +22,17 @@ impl Region {
     pub fn area(&self) -> u32 {
         self.width * self.height
     }
+
+    pub fn total_quantity(&self) -> u32 {
+        self.quantities.iter().sum()
+    }
 }
 
 static INDEX_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+:+$").unwrap());
 static SHAPE_ROW_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[.#]+$").unwrap());
 static REGION_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+x\d+:(\s+\d+)*$").unwrap());
 
-fn parse_input(lines: &[String]) -> Result<(Vec<Shape>, Vec<Region>)> {
+fn parse_input(lines: &[String]) -> Result<(Vec<Shape>, u32, u32, Vec<Region>)> {
     let mut shapes = vec![];
     let mut regions = vec![];
 
@@ -61,12 +67,18 @@ fn parse_input(lines: &[String]) -> Result<(Vec<Shape>, Vec<Region>)> {
             "shape rows don't have the same number of columns"
         );
 
+        let width = rows[0].len() as u32;
+        let height = rows.len() as u32;
         let area = rows
             .into_iter()
             .map(|row| row.chars().filter(|&ch| ch == '#').count() as u32)
             .sum();
 
-        let shape = Shape { area: area };
+        let shape = Shape {
+            width,
+            height,
+            area,
+        };
         shapes.push(shape);
 
         while let Some(&line) = lines.peek()
@@ -75,6 +87,25 @@ fn parse_input(lines: &[String]) -> Result<(Vec<Shape>, Vec<Region>)> {
             lines.next();
         }
     }
+
+    ensure!(!shapes.is_empty(), "problem doesn't have any shapes");
+
+    let shape_widths = shapes.iter().map(|shape| shape.width).collect::<Vec<_>>();
+    let shape_heights = shapes.iter().map(|shape| shape.height).collect::<Vec<_>>();
+
+    ensure!(
+        shape_widths.windows(2).all(|width| width[0] == width[1]),
+        "shapes don't have the same width"
+    );
+    ensure!(
+        shape_heights
+            .windows(2)
+            .all(|height| height[0] == height[1]),
+        "shapes don't have the same height"
+    );
+
+    let shape_width = shape_widths[0];
+    let shape_height = shape_heights[0];
 
     while let Some(&line) = lines.peek() {
         lines.next();
@@ -107,12 +138,12 @@ fn parse_input(lines: &[String]) -> Result<(Vec<Shape>, Vec<Region>)> {
         regions.push(region);
     }
 
-    Ok((shapes, regions))
+    Ok((shapes, shape_width, shape_height, regions))
 }
 
 fn main() -> Result<()> {
     let lines = io::stdin().lines().collect::<Result<Vec<_>, _>>()?;
-    let (shapes, regions) = parse_input(&lines)?;
+    let (shapes, shape_width, shape_height, regions) = parse_input(&lines)?;
 
     let mut count = 0;
     for region in regions {
@@ -126,10 +157,12 @@ fn main() -> Result<()> {
             continue;
         }
 
-        // Cheat a bit and just assume that if it's not the case that the shapes
-        // obviously can't fit, they will fit. It turns out the puzzle is
-        // designed so that this assumption holds.
-        count += 1;
+        let simple_quantity = (region.width / shape_width) * (region.height / shape_height);
+        if simple_quantity >= region.total_quantity() {
+            count += 1;
+        } else {
+            bail!("problem is NP-complete");
+        }
     }
 
     println!("{count}");
