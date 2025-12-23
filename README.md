@@ -40,13 +40,13 @@ I played by the following rules (mostly):
 2. **Programs should not panic on malformed input.** The only exception was
    integer overflows, which I didn’t protect against. My goal here was to get a
    feel for Rust’s error handling capabilities.
- 
+
 3. **Come up with the solution myself.** I only looked at solutions produced by
    others after I finished my solution and pushed it to GitHub.
 
 4. **No code written by AI.** I used AI to discuss specific topics or techniques,
    and sometimes for research, but never to write solution code.
- 
+
 5. **No going back.** When a solution for the day was done, I didn’t touch it
    anymore (except for trivial fixes).
 
@@ -60,7 +60,7 @@ My favorite solutions:
 
   * **[Day 3](day-3/src/main.rs):** I managed to come up with an efficient
     algorithm, and the solution code is short & sweet.
-  
+
   * **[Day 7](day-7/src/main.rs):** This was an easy problem, and I think the
     code expresses its solution particularly cleanly.
 
@@ -70,7 +70,7 @@ My least favorite solutions:
   better algorithm based on generating invalid IDs seemed too complex to
   implement. I completely missed an elegant way to generate the IDs using
   multiples of numbers like 101, 10101, etc.
-  
+
 * **[Day 10](day-10/src/main.rs):** After devising a nice solution for part 1, I
   failed to see a reasonable way to solve part 2 without a linear programming
   solver. I ended up using [`microlp`][crates-microlp], which felt like
@@ -80,13 +80,13 @@ My least favorite solutions:
 * **[Day 11](day-11/src/main.rs):** Let’s just say I’ll remember now that the
   number of paths from A to B through C is equal to the number of paths from A
   to C multiplied by the number of paths from C to B.
-  
+
 ## Approach
 
 Initially, I tried to write my solutions “properly”: with a nice data model,
 careful error handling, and at least basic unit tests. However, after **days 1
 and 2**, it became obvious this was an overkill. I was spending more time on
-peripheral issues than on actual problems. 
+peripheral issues than on actual problems.
 
 As a result, from **day 3**, I started using [`anyhow`][crates-anyhow] to
 simplify error handling and allowed some low-level errors to just bubble
