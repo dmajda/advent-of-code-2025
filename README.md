@@ -35,7 +35,7 @@ $ cargo run < input.txt
 I played by the following rules (mostly):
 
 1. **Use only the Rust standard library.** I relaxed this rule a bit after a few
-   days, though — see [approach](#approach) below.
+   days, though — see [below](#approach).
 
 2. **Programs should not panic on malformed input.** The only exception was
    integer overflows, which I didn’t protect against. My goal here was to get a
