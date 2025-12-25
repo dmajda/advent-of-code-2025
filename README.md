@@ -17,8 +17,7 @@ brief notes on my [approach](#approach).
 The code is organized as a [Cargo workspace][cargo-workspaces] with a separate
 package for each day (`day-1`, `day-2`, etc.). Every package contains a binary
 that reads puzzle input from the standard input and writes answers to both parts
-of the puzzle to the standard output. Puzzle inputs are [not included with the
-code][aoc-faq-copying].
+of the puzzle to the standard output.
 
 To run the binaries, use `cargo run`:
 
@@ -29,6 +28,19 @@ $ cargo run < input.txt
 16927
 167384358365132
 ```
+
+As a special case, the `day-1` package contains additional binaries with
+alternative solutions. To run them, use `cargo run` and specify the binary name:
+
+```console
+$ cd day-1
+$ cargo run --bin simple < input.txt
+...
+$ cargo run --bin structured < input.txt
+...
+```
+
+Note that puzzle inputs are [not included with the code][aoc-faq-copying].
 
 ## Rules
 
@@ -53,6 +65,10 @@ I played by the following rules (mostly):
    This rule was a bit painful to adhere to, as I learned how best to do various
    things in Rust and as I saw solutions to the problems that were better than
    mine. But not adhering to it would have led to madness.
+
+   I broke this rule only in one case, when I added alternative solutions for
+   the day 1 puzzle as part of a small experiment (see comments in the code for
+   more details).
 
 ## Highlights
 
